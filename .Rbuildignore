@@ -1,0 +1,9 @@
+^docs$
+^tools$
+^README\.qmd$
+^\.github$
+^.*\.Rproj$
+^\.Rproj\.user$
+^_pkgdown\.yml$
+^pkgdown$
+^vignettes/\.quarto$

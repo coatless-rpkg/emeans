@@ -1,0 +1,15 @@
+.Rproj.user
+.Rhistory
+.RData
+.DS_Store
+src/*.o
+src/*.so
+src/*.dll
+tools/crosscheck/runs/
+tools/crosscheck/.venv/
+tools/crosscheck/**/__pycache__/
+inst/doc
+*.Rcheck/
+*.tar.gz
+docs/
+.quarto/

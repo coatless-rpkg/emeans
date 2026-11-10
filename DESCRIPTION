@@ -1,0 +1,41 @@
+Package: emeans
+Type: Package
+Title: E-Means Clustering, a Fast Mini-Batch Alternative to K-Means
+Version: 0.1.0
+Authors@R: c(
+    person("James Joseph", "Balamuta", , "balamut2@illinois.edu",
+           role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0003-2826-8458")),
+    person("Gergely", "Szilvasy", role = "ctb",
+           comment = "Wrote the faiss Python code this package is ported from; not involved in this package"),
+    person("Swann", "Bessa", role = "ctb",
+           comment = "Wrote the faiss Python code this package is ported from; not involved in this package"),
+    person("Matthijs", "Douze", role = "ctb",
+           comment = "Wrote the faiss Python code this package is ported from; not involved in this package"),
+    person("Meta Platforms, Inc. and affiliates", role = "cph")
+  )
+Description: Fits e-means, a mini-batch alternative to k-means whose
+    centroids follow exponential moving averages of the batches they see,
+    with C++ kernels built on 'Rcpp' and 'RcppArmadillo' and optional GPU
+    support through 'torch'. The algorithm is ported from the e-means
+    implementation in the 'faiss' library
+    <https://github.com/facebookresearch/faiss> and is described in
+    <doi:10.48550/arXiv.2611.09501>.
+License: MIT + file LICENSE
+Copyright: See the files inst/AUTHORS and inst/COPYRIGHTS
+URL: https://github.com/coatless-rpkg/emeans,
+    https://r-pkg.thecoatlessprofessor.com/emeans/
+BugReports: https://github.com/coatless-rpkg/emeans/issues
+Depends: R (>= 4.1.0)
+Imports: Rcpp, stats
+LinkingTo: Rcpp, RcppArmadillo
+Suggests: ggplot2, knitr, torch, testthat (>= 3.1.7), quarto, tidyclust,
+    modelenv, generics, withr
+VignetteBuilder: quarto
+SystemRequirements: Quarto command line tools
+    (https://github.com/quarto-dev/quarto-cli)
+Config/testthat/edition: 3
+Config/emeans/upstream: 2b648f0605f2ef3d14c4705350f8a0b214463878
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.1
