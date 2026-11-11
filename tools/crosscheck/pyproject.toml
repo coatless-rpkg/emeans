@@ -1,0 +1,15 @@
+[project]
+name = "emeans-crosscheck"
+version = "0.1.0"
+description = "Development-only cross-check of the {emeans} R port against upstream faiss e-means (NumpyEmeans)."
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "faiss-cpu",
+    # Optional upstream: with SciPy, the pinned e_means.py accumulates batch
+    # sums through its sparse _add_rows_at path, as a typical install does.
+    "scipy",
+]
+
+[tool.uv]
+package = false
