@@ -1,0 +1,86 @@
+---
+title: "Running emeans on a GPU with torch"
+format: html
+vignette: >
+  %\VignetteIndexEntry{Running emeans on a GPU with torch}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+execute:
+  eval: false
+---
+
+```{r}
+#| include: false
+#| eval: true
+inline_svg <- function(file) {
+  svg <- paste(readLines(file.path("figures", file), warn = FALSE), collapse = "\n")
+  knitr::asis_output(paste0("```{=html}\n", svg, "\n```\n"))
+}
+```
+
+CRAN's build machines have no GPU, so none of the chunks below run when the
+package is built; they show the calls to make on your own hardware.
+
+emeans runs the same algorithm on a GPU through the optional
+[torch](https://torch.mlverse.org/) package, which needs its LibTorch backend
+installed before anything interesting can happen:
+
+```r
+install.packages("torch")
+torch::install_torch()
+```
+
+## What changes on a device
+
+```{r}
+#| echo: false
+#| eval: true
+inline_svg("devices.svg")
+```
+
+* Computation happens in float32 on the device, and on Apple MPS the counts
+  and the objective are float32 as well.
+* Every random draw still comes from R's generator, so `set.seed()` remains in
+  charge of the fit.
+* Results will not match the CPU path bit for bit, because float32 rounds
+  differently, and on CUDA they may not even match each other between runs,
+  since `index_add_` sums with atomics in an order that can vary.
+* The result is an ordinary `"emeans"` object holding R matrices and vectors,
+  so nothing downstream needs to know a GPU was involved.
+
+## Apple GPUs (MPS)
+
+```{r}
+library(emeans)
+set.seed(1)
+x <- matrix(rnorm(2e6 * 16), ncol = 16)
+fit <- emeans(x, 1000, device = "mps")
+fit
+predict(fit, x[1:10, ])   # assigned on the same device
+```
+
+## NVIDIA GPUs (CUDA)
+
+```{r}
+fit <- emeans(x, 1000, device = "cuda")       # or "cuda:1"
+```
+
+::: {.callout-warning}
+The CUDA path is experimental: the torch backend has been tested on Apple
+MPS and on torch's CPU device but has yet to meet an NVIDIA card. If you give
+it a whirl, please report what you see at
+<https://github.com/coatless-rpkg/emeans/issues>.
+:::
+
+## Torch on the CPU, and tensors as input
+
+`device = "torch:cpu"` runs the torch backend on the CPU, which is handy for
+testing without a GPU. On any torch device `x` may also be a 2-D
+`torch_tensor`, which emeans casts to float32 and moves to the device but
+does not check for `NA`, `NaN` or infinite values, so make sure it arrives
+clean.
+
+```{r}
+xt <- torch::torch_tensor(x, device = "mps")
+fit <- emeans(xt, 1000, device = "mps")
+```

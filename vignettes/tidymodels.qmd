@@ -1,0 +1,107 @@
+---
+title: "Using emeans with tidymodels"
+format: html
+vignette: >
+  %\VignetteIndexEntry{Using emeans with tidymodels}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+#| include: false
+has_tidy <- requireNamespace("tidyclust", quietly = TRUE) &&
+  requireNamespace("generics", quietly = TRUE)
+has_ggplot <- has_tidy && requireNamespace("ggplot2", quietly = TRUE)
+knitr::opts_chunk$set(eval = has_tidy, comment = "#>", message = FALSE,
+                      dev.args = list(bg = "transparent"))
+```
+
+emeans works with tidymodels through two optional packages,
+[tidyclust](https://tidyclust.tidymodels.org/) and
+[generics](https://generics.r-lib.org/), and the code below runs only when
+both are installed.
+
+## broom-style methods
+
+The broom-style verbs `tidy()`, `glance()` and `augment()` return plain data
+frames, so no tibble is required to enjoy them.
+
+```{r}
+library(emeans)
+library(generics)
+
+set.seed(1)
+df <- as.data.frame(rbind(
+  matrix(rnorm(400, sd = 0.5), ncol = 2),
+  matrix(rnorm(400, mean = 3, sd = 0.5), ncol = 2)
+))
+names(df) <- c("a", "b")
+
+em_fit <- emeans(df, 2, threads = 2)
+tidy(em_fit)
+glance(em_fit)
+head(augment(em_fit, df))
+```
+
+`augment()` reuses the training labels when `data` is the training set,
+while passing `newdata` labels fresh observations through `predict()`
+instead.
+
+## The tidyclust engine
+
+Loading tidyclust registers an `"emeans"` engine for `k_means()`, so the
+usual specification needs nothing more than a different `set_engine()`:
+
+```{r}
+library(tidyclust)
+
+spec <- k_means(num_clusters = 2) |>
+  set_engine("emeans", nepochs = 3, threads = 2)
+spec_fit <- fit(spec, ~ a + b, data = df)
+spec_fit
+```
+
+Engine arguments such as `nepochs`, `spherical` and `threads` pass straight
+through to `emeans()`, and the usual tidyclust helpers work on the result:
+
+```{r}
+extract_centroids(spec_fit)
+head(extract_cluster_assignment(spec_fit), 3)
+predict(spec_fit, df[1:5, ])
+sse_within_total(spec_fit)
+```
+
+The within-cluster and total sums of squares that tidyclust expects come
+straight from the fit, since `emeans()` adds them up in the same sweep that
+labels the rows.
+
+## Plotting with ggplot2
+
+The tidyclust helpers return data frames, which ggplot2 happily takes as
+they are; this chunk runs only when ggplot2 is installed as well.
+
+```{r}
+#| eval: !expr has_ggplot
+#| fig-width: 6
+#| fig-height: 4.6
+#| fig-alt: "Scatter plot of 400 points in two groups, coloured green and blue by tidyclust cluster, with a large ringed dot at each cluster's centroid."
+library(ggplot2)
+
+points <- cbind(df, extract_cluster_assignment(spec_fit))
+centers <- extract_centroids(spec_fit)
+ink <- "#7C7799"
+
+ggplot(points, aes(a, b, colour = .cluster)) +
+  geom_point(alpha = 0.6, size = 1.4) +
+  geom_point(data = centers, aes(fill = .cluster), shape = 21, size = 5,
+             colour = "white", stroke = 1.6, show.legend = FALSE) +
+  scale_colour_manual(values = c("#1F9E80", "#5F6FE0"),
+                      aesthetics = c("colour", "fill")) +
+  coord_equal() +
+  labs(colour = NULL) +
+  theme_minimal(base_size = 12) +
+  theme(plot.background = element_rect(fill = NA, colour = NA),
+        text = element_text(colour = ink),
+        axis.text = element_text(colour = ink),
+        panel.grid = element_line(colour = adjustcolor(ink, alpha.f = 0.25)))
+```

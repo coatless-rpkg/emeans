@@ -1,0 +1,235 @@
+---
+title: "Getting started with emeans"
+format: html
+vignette: >
+  %\VignetteIndexEntry{Getting started with emeans}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+#| include: false
+knitr::opts_chunk$set(comment = "#>", dev.args = list(bg = "transparent"))
+# Plots: transparent, with a mid-tone ink that reads on light and dark pages.
+knitr::knit_hooks$set(ink = function(before, options, envir) {
+  if (before) {
+    par(bg = NA, fg = "#7C7799", col = "#7C7799", col.axis = "#7C7799",
+        col.lab = "#7C7799", col.main = "#7C7799", font.main = 1,
+        mar = c(4, 4, 2, 1))
+  }
+})
+knitr::opts_chunk$set(ink = TRUE)
+inline_svg <- function(file) {
+  svg <- paste(readLines(file.path("figures", file), warn = FALSE), collapse = "\n")
+  knitr::asis_output(paste0("```{=html}\n", svg, "\n```\n"))
+}
+```
+
+emeans fits e-means, the mini-batch alternative to k-means from Meta FAIR's
+faiss library, whose authors report a lower loss than Lloyd's algorithm in
+about a tenth of the epochs (Bessa et al., 2026; see `citation("emeans")`).
+This vignette takes you through a first fit and then the handful of knobs you
+will rarely need to touch.
+
+## Quick start
+
+```{r}
+library(emeans)
+
+set.seed(1)
+x <- rbind(
+  matrix(rnorm(6000, mean = 0, sd = 0.7), ncol = 2),
+  matrix(rnorm(6000, mean = 3, sd = 0.7), ncol = 2),
+  cbind(rnorm(3000, 0, 0.7), rnorm(3000, 3, 0.7))
+)
+fit <- emeans(x, 3, threads = 2)
+fit
+```
+
+The fit is a list holding the centers, each row's cluster, the sizes and
+sums of squares familiar from `kmeans()`, a per-pass `history` and the recipe
+that produced it.
+
+```{r}
+fit$centers
+fit$size
+head(fit$history, 3)
+```
+
+`summary(fit)` prints the recipe with the tail of the history, and since
+every random draw comes from R's own generator, `set.seed()` is all it takes
+to make a fit reproducible.
+
+## Plotting the clusters
+
+Base graphics are all you need to admire the result: colour each point by
+its cluster and give each center a ring so it stands out from the crowd.
+
+```{r}
+#| fig-width: 6
+#| fig-height: 5.2
+#| fig-alt: "Scatter plot of 15,000 points in three groups, coloured green, blue and amber by cluster, with a large ringed dot at the centre of each group."
+cols <- c("#1F9E80", "#5F6FE0", "#C27A17")  # one colour per cluster
+plot(x, col = adjustcolor(cols[fit$cluster], alpha.f = 0.45), pch = 16, cex = 0.5,
+     xlab = "x1", ylab = "x2", asp = 1)
+points(fit$centers, pch = 21, bg = cols, col = "white", cex = 2.4, lwd = 2.5)
+points(fit$centers, pch = 1, cex = 3.1, lwd = 1.5)
+```
+
+## Comparison with `kmeans()`
+
+`emeans(x, k)` slots into code written for `stats::kmeans(x, k)`, since the
+result carries the same `cluster`, `centers`, `size`, `withinss`,
+`tot.withinss`, `totss` and `betweenss` and answers to `predict()`; the one
+difference worth knowing is that `iter` counts batch updates rather than
+Lloyd iterations.
+
+Three well-separated blobs flatter any method, so here is a harder test: 25
+blobs on a grid, with both methods starting from the same 25 points and
+allowed the same number of passes over the data. Each is scored by its error,
+`tot.withinss / nrow(y)`, the mean squared distance from a point to its
+nearest center.
+
+```{r}
+set.seed(1)
+grid <- as.matrix(expand.grid(1:5, 1:5)) * 4
+y <- grid[sample(25, 25000, replace = TRUE), ] +
+  matrix(rnorm(50000, sd = 0.8), ncol = 2)
+start <- y[sample.int(nrow(y), 25), ]
+
+lloyd <- function(passes) {
+  suppressWarnings(kmeans(y, start, iter.max = passes, algorithm = "Lloyd"))
+}
+em6 <- emeans(y, 25, centers = start, nepochs = 6, threads = 2)
+```
+
+Here is where each method stands after six passes:
+
+```{r}
+#| fig-width: 8
+#| fig-height: 4.2
+#| fig-alt: "Two panels of the same 25 grey blobs on a five by five grid, each with its 25 centers marked. Left, kmeans() after six passes: several blobs share two centers while others have none. Right, emeans() after six passes: every blob but two has a center of its own; one center sits between two blobs in the top row and one blob in the second row has two. Each panel's title gives its error."
+fits <- list("kmeans()" = lloyd(6), "emeans()" = em6)
+par(mfrow = c(1, 2), mar = c(0.5, 0.5, 2.5, 0.5))
+for (name in names(fits)) {
+  plot(y, pch = 16, cex = 0.3, col = adjustcolor("#7C7799", alpha.f = 0.15),
+       asp = 1, axes = FALSE, xlab = "", ylab = "",
+       main = sprintf("%s, error %.2f", name, fits[[name]]$tot.withinss / nrow(y)))
+  points(fits[[name]]$centers, pch = 21, bg = cols[2], col = "white", cex = 1.9, lwd = 2)
+}
+```
+
+Following the error pass by pass tells the same story. For `kmeans()` each
+point on the line is a fresh run allowed one more Lloyd iteration than the
+last, while e-means logs the error of every pass in `fit$history` as it
+goes.
+
+```{r}
+#| fig-width: 6.5
+#| fig-height: 4.2
+#| fig-alt: "Line chart of error against passes over the data, from one to six, for kmeans() and emeans(). The emeans() line falls below the kmeans() line within the first passes and stays there."
+passes <- 1:6
+error <- rbind(
+  kmeans = sapply(passes, function(p) lloyd(p)$tot.withinss / nrow(y)),
+  emeans = em6$history$obj / em6$history$rows
+)
+matplot(passes, t(error), type = "o", lty = 1, pch = 16, lwd = 2.5,
+        col = cols[c(3, 2)], xlab = "passes over the data", ylab = "error")
+legend("topright", c("kmeans()", "emeans()"), col = cols[c(3, 2)],
+       lwd = 2.5, pch = 16, bty = "n")
+```
+
+Six passes in, Lloyd's algorithm still has blobs sharing a center while
+their neighbours go without, whereas e-means does most of its work in the
+first pass and has settled by the second, although even it leaves one blob
+with a center to spare.
+
+## How the centroids move
+
+Each batch is assigned to its nearest centroids, and every centroid then
+moves part of the way toward the mean of the batch points it won. How far it
+moves depends on a weight `w` that grows with the number of those points and
+with the step size `alpha`, while the running count `N` behind it is an
+exponential moving average, so old batches fade from memory instead of
+weighing on the centroid forever.
+
+```{r}
+#| echo: false
+inline_svg("update.svg")
+```
+
+The step size starts at `alpha0` and glides along a cosine to a tenth of
+that by the last update. During the final pass emeans also keeps each
+cluster's exact sums, so every cluster that received points in that pass
+finishes at their exact mean, a closing flourish that tidies up whatever
+wobble the moving averages left behind.
+
+```{r}
+#| echo: false
+inline_svg("schedule.svg")
+```
+
+## The recipe
+
+Left to its own devices, `emeans()` picks the batch size, the initial step
+size `alpha0` and the revival threshold from the number of rows, `k` and the
+dimension, then files the whole recipe away in the fit:
+
+```{r}
+str(fit$recipe[c("nepochs", "batch_size", "alpha0", "epoch_rows")])
+```
+
+You can override any piece with `nepochs`, `batch_size`, `alpha0`,
+`batch_law` or `unused_threshold`, and `nepochs` may even be fractional,
+though a budget so stingy that an epoch would hold no rows is an error.
+
+```{r}
+fit2 <- emeans(x, 3, nepochs = 2, batch_size = 256, threads = 2)
+fit2$recipe$batch_size
+```
+
+## Predicting
+
+`predict()` assigns new rows to their nearest center or, with
+`type = "distance"`, returns that center's score:
+
+```{r}
+newx <- rbind(c(0, 0), c(3, 3), c(0, 3))
+predict(fit, newx)
+predict(fit, newx, type = "distance")
+```
+
+For the training rows `fit$cluster` gives the same answer as
+`predict(fit, x)`, because `emeans()` finishes with a sweep that labels every
+row by its nearest final center and adds up the sums of squares on the way.
+On very large data `keep_cluster = FALSE` skips that sweep and saves roughly a
+pass, at the price of the labels and sums of squares. When the fit used
+`max_points_per_centroid`, the rows left out of training appear in
+`fit$cluster` as `NA`, though `predict()` will label them for you.
+
+## Spherical mode
+
+With `spherical = TRUE`, e-means clusters unit vectors by inner product and
+leaves normalising the data to you.
+
+```{r}
+set.seed(2)
+angle <- c(rnorm(500, 0), rnorm(500, 2), rnorm(500, 4))
+y <- cbind(cos(angle), sin(angle))
+sph <- emeans(y, 3, spherical = TRUE, threads = 2)
+sph$centers
+rowSums(sph$centers^2)
+```
+
+In this mode `predict(type = "distance")` returns the inner-product
+similarity rather than a squared distance, so bigger now means closer.
+
+## Odds and ends
+
+`threads` defaults to `getOption("emeans.threads", 2L)` and bows to any cap
+set in the `OMP_THREAD_LIMIT` environment variable. R for macOS ships without
+OpenMP, so Mac builds run serially unless you configure the compiler
+otherwise.
+
+The deliberate differences from the upstream Python implementation are listed
+under "Differences from upstream" in `?emeans`.

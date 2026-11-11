@@ -1,0 +1,167 @@
+---
+title: "Training on data that does not fit in memory"
+format: html
+vignette: >
+  %\VignetteIndexEntry{Training on data that does not fit in memory}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+#| include: false
+knitr::opts_chunk$set(comment = "#>", dev.args = list(bg = "transparent"))
+# Plots: transparent, with a mid-tone ink that reads on light and dark pages.
+knitr::knit_hooks$set(ink = function(before, options, envir) {
+  if (before) {
+    par(bg = NA, fg = "#7C7799", col = "#7C7799", col.axis = "#7C7799",
+        col.lab = "#7C7799", col.main = "#7C7799", font.main = 1,
+        mar = c(4, 4, 2, 1))
+  }
+})
+knitr::opts_chunk$set(ink = TRUE)
+inline_svg <- function(file) {
+  svg <- paste(readLines(file.path("figures", file), warn = FALSE), collapse = "\n")
+  knitr::asis_output(paste0("```{=html}\n", svg, "\n```\n"))
+}
+```
+
+The experimental `em_*()` functions run e-means one batch at a time, which
+lets the data stay on disk while only the current batch visits memory. To
+keep things honest, this vignette streams every batch from a binary file of
+doubles written with `writeBin()`.
+
+## The data file
+
+Our file holds `n` rows of `d` doubles stored one row after another, and the
+last line confirms that its size is exactly what that implies.
+
+```{r}
+library(emeans)
+
+set.seed(1)
+n <- 20000L
+d <- 4L
+centers_true <- matrix(c(0, 0, 0, 0,  5, 5, 0, 0,  0, 5, 5, 5), ncol = d, byrow = TRUE)
+x <- centers_true[sample(3, n, replace = TRUE), ] + matrix(rnorm(n * d), ncol = d)
+
+path <- tempfile(fileext = ".bin")
+con <- file(path, "wb")
+writeBin(as.vector(t(x)), con)
+close(con)
+file.size(path) / (n * d * 8)
+```
+
+A small helper fetches any set of rows by seeking to each in turn, which is
+slow but perfectly adequate for a demonstration:
+
+```{r}
+read_rows <- function(con, rows) {
+  out <- matrix(0, length(rows), d)
+  for (i in seq_along(rows)) {
+    seek(con, (rows[i] - 1) * d * 8)
+    out[i, ] <- readBin(con, "double", d)
+  }
+  out
+}
+```
+
+## The loop
+
+```{r}
+#| echo: false
+inline_svg("loop.svg")
+```
+
+`em_begin()` takes the total number of rows and the starting centers and
+returns a training state, whose `$recipe` holds the two numbers you need to
+feed it:
+
+* `recipe$batch_size` rows per batch;
+* `recipe$epoch_rows[i]` rows in pass `i`.
+
+The rules come straight from upstream: every batch has exactly `batch_size`
+rows except the last of each pass, which takes the remainder, and each pass
+delivers exactly `epoch_rows[i]` rows, namely the first that many of a fresh
+shuffle of all rows. Each batch goes through `em_accumulate()` and then
+`em_update()`, and each pass ends with `em_end_epoch()`; if a batch is too
+big to read in one go, you may hand it to `em_accumulate()` in several pieces
+that all count towards the same batch.
+
+```{r}
+con <- file(path, "rb")
+start <- read_rows(con, sample.int(n, 3))
+st <- em_begin(n, start, nepochs = 3, threads = 2)
+B <- st$recipe$batch_size
+
+labels <- integer(n)
+trail <- list(em_centers(st))     # each centroid's position, for the plot below
+for (e in seq_along(st$recipe$epoch_rows)) {
+  ord <- sample.int(n)[seq_len(st$recipe$epoch_rows[e])]
+  for (s in seq(1, length(ord), by = B)) {
+    rows <- ord[s:min(s + B - 1, length(ord))]
+    stats <- em_accumulate(st, read_rows(con, rows))
+    if (!is.null(stats$labels)) {   # only in the last pass
+      labels[rows] <- stats$labels
+    }
+    em_update(st, stats)
+    trail[[length(trail) + 1L]] <- em_centers(st)
+  }
+  em_end_epoch(st)
+}
+close(con)
+fit <- em_finalize(st)
+fit
+```
+
+`em_finalize()` returns an ordinary `"emeans"` object whose `cluster` is
+`NULL`, because only you know where the rows live, so keeping the last-pass
+labels falls to you, as in the loop above. `emeans()` would finish with a
+sweep that relabels every row against the final centers and adds up the sums
+of squares, but the loop has no data left to sweep, so those labels were
+computed mid-pass and a few may not match the nearest final center, which
+`predict()` will supply on request.
+
+```{r}
+round(fit$centers[order(fit$centers[, 1]), ], 1)
+table(labels)
+```
+
+## Watching the centroids move
+
+The loop also saved `em_centers(st)` after every update, and drawing those
+positions on the first two coordinates shows each centroid travelling from
+its random start into the middle of its cluster, striding at first and
+shuffling by the end as the step size shrinks. Hollow circles mark the random
+starts and filled ones the final centers.
+
+```{r}
+#| fig-width: 6
+#| fig-height: 5.2
+#| fig-alt: "Grey points from the file, projected on their first two coordinates, with three coloured lines tracing each centroid from its random start into the centre of one of the three clusters, where a large ringed dot marks its final position."
+paths <- simplify2array(trail)    # k x d x number of updates
+cols <- c("#1F9E80", "#5F6FE0", "#C27A17")
+keep <- sample.int(n, 2000)
+plot(x[keep, 1:2], pch = 16, cex = 0.5, col = adjustcolor("#7C7799", alpha.f = 0.3),
+     xlab = "x1", ylab = "x2", asp = 1)
+for (j in seq_len(nrow(fit$centers))) {
+  lines(paths[j, 1, ], paths[j, 2, ], col = cols[j], lwd = 2.5)
+  points(paths[j, 1, 1], paths[j, 2, 1], col = cols[j], cex = 1.4, lwd = 2)
+}
+points(fit$centers[, 1:2], pch = 21, bg = cols, col = "white", cex = 2.4, lwd = 2.5)
+points(fit$centers[, 1:2], pch = 1, cex = 3.1, lwd = 1.5)
+```
+
+## Checking progress
+
+`em_centers(st)` returns the current centers at any point, which is handy for
+keeping an eye on a long run. The functions reject any call that breaks the
+batch rules before touching the state, so a failed call costs nothing and can
+be retried with the right rows.
+
+```{r}
+#| include: false
+unlink(path)
+```
+
+For data that fits in memory, `emeans()` runs this very loop for you and
+spares you the bookkeeping.
