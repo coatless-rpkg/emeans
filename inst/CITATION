@@ -1,0 +1,45 @@
+bibentry(
+  "Misc",
+  key = "bessa2026emeans",
+  title = "{e-means}: outperforming {k-means} (in one-tenth the epochs)",
+  author = c(
+    person("Swann", "Bessa"),
+    person("Pierre-Emmanuel", "Mazaré"),
+    person("Gergely", "Szilvasy"),
+    person("Hugo", "Touvron"),
+    person("David", "Picard"),
+    person("Matthijs", "Douze"),
+    person("Hervé", "Jégou")
+  ),
+  year = "2026",
+  note = "Preprint",
+  url = "https://arxiv.org/abs/2611.09501",
+  textVersion = paste(
+    "Bessa S, Mazaré P-E, Szilvasy G, Touvron H, Picard D, Douze M,",
+    "Jégou H (2026). e-means: outperforming k-means (in one-tenth the",
+    "epochs). Preprint. https://arxiv.org/abs/2611.09501"
+  )
+)
+
+bibentry(
+  "Manual",
+  key = "szilvasy2026emeansfaiss",
+  title = "{e-means} in {FAISS}: the reference {Python} implementation (contrib/e_means)",
+  author = c(
+    person("Gergely", "Szilvasy"),
+    person("Swann", "Bessa"),
+    person("Matthijs", "Douze")
+  ),
+  organization = "Meta FAIR",
+  year = "2026",
+  note = paste(
+    "Released in FAISS 1.16.0. The emeans R package ports commit",
+    "2b648f0605f2ef3d14c4705350f8a0b214463878"
+  ),
+  url = "https://github.com/facebookresearch/faiss/tree/main/contrib/e_means",
+  textVersion = paste(
+    "Szilvasy G, Bessa S, Douze M (2026). e-means in FAISS: the reference",
+    "Python implementation (contrib/e_means). Meta FAIR. Released in FAISS",
+    "1.16.0. https://github.com/facebookresearch/faiss/tree/main/contrib/e_means"
+  )
+)

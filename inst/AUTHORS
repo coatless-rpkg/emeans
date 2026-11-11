@@ -1,0 +1,24 @@
+Authors of emeans
+
+emeans is written and maintained by James Joseph Balamuta: the R port of
+the algorithm, the C++ assignment kernels in src/, the torch backend, the
+em_*() batch loop, the broom and tidyclust methods, the documentation and
+the tests.
+
+Ported code
+
+The algorithm is ported from the Python implementation of e-means in faiss
+contrib/e_means (https://github.com/facebookresearch/faiss), written by
+Gergely Szilvasy, Swann Bessa and Matthijs Douze. The files derived from it
+are listed in inst/COPYRIGHTS. They are credited as contributors for that
+code only and took no part in writing, reviewing or maintaining this package,
+so please report problems with it at
+https://github.com/coatless-rpkg/emeans/issues.
+
+Copyright holders
+
+  James Joseph Balamuta, for the R package.
+
+  Meta Platforms, Inc. and affiliates, for the faiss code from which the
+  files listed in inst/COPYRIGHTS are derived, used under the MIT licence
+  reproduced there.
