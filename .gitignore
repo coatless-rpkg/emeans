@@ -13,3 +13,4 @@ inst/doc
 *.tar.gz
 docs/
 .quarto/
+CRAN-SUBMISSION
