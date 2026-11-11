@@ -26,5 +26,6 @@ Initial CRAN release: an R port of the e-means clustering in faiss
   broom's columns for `kmeans()`, and an
   `"emeans"` engine for `tidyclust::k_means()`.
 * Results were cross-checked pass by pass against the upstream Python
-  implementation with replayed random draws; see `tools/crosscheck/`.
+  implementation with replayed random draws; see `tools/crosscheck/` in the
+  GitHub repository.
 * Four vignettes: getting started, large data, tidymodels and GPU.

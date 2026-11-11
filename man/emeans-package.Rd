@@ -7,7 +7,7 @@
 \description{
 \if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
 
-Fits e-means, a mini-batch alternative to k-means whose centroids follow exponential moving averages of the batches they see, with C++ kernels built on 'Rcpp' and 'RcppArmadillo' and optional GPU support through 'torch'. The algorithm is ported from the e-means implementation in the 'faiss' library \url{https://github.com/facebookresearch/faiss} and is described in \doi{10.48550/arXiv.2611.09501}.
+Fits e-means, a mini-batch alternative to k-means whose centroids follow exponential moving averages of the batches they see, and which its authors report reaches a lower loss than Lloyd's algorithm in about a tenth of the passes over the data; see Bessa et al. (2026) \doi{10.48550/arXiv.2611.09501}. Fits carry the same cluster labels, centers and sums of squares as kmeans() and work with predict(), the 'generics' verbs tidy(), glance() and augment() and the 'tidyclust' k_means() engine, while data too large for memory can be streamed one batch at a time. The 'C++' kernels use 'Rcpp' and 'RcppArmadillo', and optional graphics processing unit (GPU) support comes through 'torch'. The algorithm is ported from the e-means implementation in the 'faiss' library \url{https://github.com/facebookresearch/faiss}.
 }
 \seealso{
 Useful links:

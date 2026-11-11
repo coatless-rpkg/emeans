@@ -32,4 +32,11 @@ Internal entry points that tidyclust calls as \verb{emeans::<fun>}; not meant
 for direct use. The fit wrapper calls \code{\link[=emeans]{emeans()}}, whose \code{withinss} and
 \code{totss} tidyclust reads.
 }
+\examples{
+set.seed(1)
+x <- matrix(rnorm(200), ncol = 2)
+fit <- .tidyclust_fit_emeans(x, 2, threads = 1)
+fit$withinss
+.tidyclust_predict_emeans(fit, x[1:5, ])
+}
 \keyword{internal}

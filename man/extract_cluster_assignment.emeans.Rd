@@ -22,4 +22,11 @@ A tibble (built without requiring the tibble package at load).
 Method for \code{\link[tidyclust:extract_cluster_assignment]{tidyclust::extract_cluster_assignment()}}. Returns a tibble
 with one \code{.cluster} factor column.
 }
+\examples{
+\dontshow{if (requireNamespace("tidyclust", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+set.seed(1)
+fit <- emeans(matrix(rnorm(200), ncol = 2), 2, threads = 1)
+head(tidyclust::extract_cluster_assignment(fit))
+\dontshow{\}) # examplesIf}
+}
 \keyword{internal}

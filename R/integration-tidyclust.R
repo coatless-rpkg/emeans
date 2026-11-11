@@ -72,6 +72,12 @@ register_tidyclust_engine <- function() {
 #' @return `.tidyclust_fit_emeans()` returns an `"emeans"` object with
 #'   `withinss` and `totss` added; `.tidyclust_predict_emeans()` returns a
 #'   factor of cluster labels.
+#' @examples
+#' set.seed(1)
+#' x <- matrix(rnorm(200), ncol = 2)
+#' fit <- .tidyclust_fit_emeans(x, 2, threads = 1)
+#' fit$withinss
+#' .tidyclust_predict_emeans(fit, x[1:5, ])
 #' @keywords internal
 #' @export
 .tidyclust_fit_emeans <- function(data, k, ...) {
@@ -126,6 +132,10 @@ make_emeans_labels <- function(n_clusters, prefix, labels) {
 #' @return A list with `cluster_names`, `centroids`, `n_members`,
 #'   `sse_within_total_total`, `sse_total`, `orig_labels` and
 #'   `cluster_assignments`.
+#' @examplesIf requireNamespace("tidyclust", quietly = TRUE)
+#' set.seed(1)
+#' fit <- emeans(matrix(rnorm(200), ncol = 2), 2, threads = 1)
+#' str(tidyclust::extract_fit_summary(fit))
 #' @exportS3Method tidyclust::extract_fit_summary
 #' @keywords internal
 extract_fit_summary.emeans <- function(object, ..., prefix = "Cluster_",
@@ -152,6 +162,10 @@ extract_fit_summary.emeans <- function(object, ..., prefix = "Cluster_",
 #' with one `.cluster` factor column.
 #' @inheritParams extract_fit_summary.emeans
 #' @return A tibble (built without requiring the tibble package at load).
+#' @examplesIf requireNamespace("tidyclust", quietly = TRUE)
+#' set.seed(1)
+#' fit <- emeans(matrix(rnorm(200), ncol = 2), 2, threads = 1)
+#' head(tidyclust::extract_cluster_assignment(fit))
 #' @exportS3Method tidyclust::extract_cluster_assignment
 #' @keywords internal
 extract_cluster_assignment.emeans <- function(object, ..., prefix = "Cluster_",

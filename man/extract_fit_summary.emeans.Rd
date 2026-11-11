@@ -23,4 +23,11 @@ A list with \code{cluster_names}, \code{centroids}, \code{n_members},
 \description{
 Method for \code{\link[tidyclust:extract_fit_summary]{tidyclust::extract_fit_summary()}}.
 }
+\examples{
+\dontshow{if (requireNamespace("tidyclust", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+set.seed(1)
+fit <- emeans(matrix(rnorm(200), ncol = 2), 2, threads = 1)
+str(tidyclust::extract_fit_summary(fit))
+\dontshow{\}) # examplesIf}
+}
 \keyword{internal}
