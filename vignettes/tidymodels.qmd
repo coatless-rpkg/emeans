@@ -11,7 +11,6 @@ vignette: >
 #| include: false
 has_tidy <- requireNamespace("tidyclust", quietly = TRUE) &&
   requireNamespace("generics", quietly = TRUE)
-has_ggplot <- has_tidy && requireNamespace("ggplot2", quietly = TRUE)
 knitr::opts_chunk$set(eval = has_tidy, comment = "#>", message = FALSE,
                       dev.args = list(bg = "transparent"))
 ```
@@ -81,7 +80,7 @@ The tidyclust helpers return data frames, which ggplot2 happily takes as
 they are; this chunk runs only when ggplot2 is installed as well.
 
 ```{r}
-#| eval: !expr has_ggplot
+#| eval: !expr requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("tidyclust", quietly = TRUE)
 #| fig-width: 6
 #| fig-height: 4.6
 #| fig-alt: "Scatter plot of 400 points in two groups, coloured green and blue by tidyclust cluster, with a large ringed dot at each cluster's centroid."

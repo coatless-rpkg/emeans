@@ -43,7 +43,9 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          # Install the package itself: Quarto renders the vignettes in a
+          # separate R process, which on Windows cannot see the build copy.
+          extra-packages: any::rcmdcheck, local::.
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
