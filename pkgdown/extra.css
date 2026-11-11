@@ -1,0 +1,96 @@
+/* emeans site theme: lavender-tinted light mode, plum dark mode. */
+
+:root {
+  --em-plum: #1E1838;
+  --em-peri: #4C5AD6;
+  --em-mint: #0F8F72;
+  --em-amber: #B86E00;
+  --em-panel: #F7F5FD;
+}
+
+[data-bs-theme="dark"] {
+  --bs-body-bg: #17132B;
+  --bs-body-bg-rgb: 23, 19, 43;
+  --bs-body-color: #ECEAF8;
+  --bs-body-color-rgb: 236, 234, 248;
+  --bs-secondary-bg: #201A3C;
+  --bs-tertiary-bg: #1C1734;
+  --bs-tertiary-bg-rgb: 28, 23, 52;
+  --bs-border-color: #2E2850;
+  --bs-secondary-color: #A9A3C9;
+  --bs-link-color: #8E9BFF;
+  --bs-link-color-rgb: 142, 155, 255;
+  --bs-link-hover-color: #B6BEFF;
+  --bs-link-hover-color-rgb: 182, 190, 255;
+  --em-panel: #201A3C;
+}
+
+h1, h2, h3, .navbar-brand {
+  letter-spacing: -0.01em;
+}
+
+/* Code blocks sit on the same quiet panel as the figures. */
+pre,
+div.sourceCode,
+div.sourceCode pre {
+  background-color: var(--em-panel) !important;
+}
+
+pre {
+  border: 1px solid var(--bs-border-color);
+}
+
+/* Inline vignette figures. */
+.em-fig {
+  display: block;
+  margin: 1.25rem auto;
+}
+
+/* Images that follow the site's light switch. The README uses <picture>
+ * with a (prefers-color-scheme: dark) source, which GitHub and CRAN honour.
+ * On the site the light switch sets [data-bs-theme] instead, so `content`
+ * lets the site's own theme decide. Paths are relative to this file, which
+ * pkgdown copies to the site root. */
+
+/* pkgdown shows its own logo (man/figures/logo.svg, the animated light hex)
+ * on every page, so the README's copy in its heading is hidden here. */
+img.em-logo {
+  display: none;
+}
+[data-bs-theme="dark"] img.logo {
+  content: url("reference/figures/emeans-logo-dark-animated.svg");
+}
+
+/* The README hero. */
+[data-bs-theme="light"] img.em-hero {
+  content: url("reference/figures/hero-light.svg");
+}
+[data-bs-theme="dark"] img.em-hero {
+  content: url("reference/figures/hero-dark.svg");
+}
+
+img.em-hero {
+  content: url("reference/figures/hero-light.svg");
+}
+[data-bs-theme="dark"] img.em-hero {
+  content: url("reference/figures/hero-dark.svg");
+}
+
+/* Bootstrap gives every img height: auto, which overrides the README's
+ * height="139", so size the logo here. */
+img.em-logo {
+  float: right;
+  width: 120px;
+  height: auto;
+  margin: 0 0 1rem 1.5rem;
+}
+@media (max-width: 575.98px) {
+  img.em-logo {
+    width: 80px;
+  }
+}
+
+img.em-hero {
+  display: block;
+  margin: 1.25rem 0 1.75rem;
+}

@@ -1,0 +1,62 @@
+url: https://r-pkg.thecoatlessprofessor.com/emeans/
+
+template:
+  bootstrap: 5
+  light-switch: true
+  theme: a11y-light
+  theme-dark: a11y-dark
+  bslib:
+    primary: "#4C5AD6"
+    link-color: "#3E4BC4"
+    base_font: {google: "Atkinson Hyperlegible"}
+    heading_font: {google: "Sora"}
+    code_font: {google: "JetBrains Mono"}
+    border-radius: 0.6rem
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github, lightswitch]
+  components:
+    github:
+      icon: fa-github
+      href: https://github.com/coatless-rpkg/emeans
+      aria-label: GitHub repository
+
+home:
+  title: "emeans: e-means clustering for R"
+  description: >
+    A fast mini-batch alternative to k-means, ported from Meta FAIR's e-means
+    in faiss, with C++ kernels on the CPU and optional GPU support via torch.
+  sidebar:
+    structure: [links, license, citation, authors, dev]
+
+reference:
+- title: Train
+  desc: Fit e-means and use the result like a `kmeans()` fit.
+  contents:
+  - emeans
+  - emeans-methods
+- title: Train one batch at a time
+  desc: >
+    Experimental functions for data that will not fit in memory, where you
+    load the batches and the model runs the same algorithm as `emeans()`.
+  contents:
+  - em_loop
+- title: Tidymodels
+  desc: Broom-style methods and the tidyclust `k_means()` engine.
+  contents:
+  - emeans-broom
+  - extract_fit_summary.emeans
+  - extract_cluster_assignment.emeans
+- title: Package
+  contents:
+  - emeans-package
+
+articles:
+- title: Guides
+  navbar: ~
+  contents:
+  - large-data
+  - gpu
+  - tidymodels
