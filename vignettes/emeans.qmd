@@ -11,12 +11,20 @@ vignette: >
 #| include: false
 knitr::opts_chunk$set(comment = "#>", dev.args = list(bg = "transparent"))
 # Plots: transparent, with a mid-tone ink that reads on light and dark pages.
+# A chunk can add graphical parameters of its own through the `ink` option;
+# the hook restores the previous settings once the chunk is done.
+ink_par <- list(bg = NA, fg = "#7C7799", col = "#7C7799", col.axis = "#7C7799",
+                col.lab = "#7C7799", col.main = "#7C7799", font.main = 1,
+                mar = c(4, 4, 2, 1))
+ink_saved <- new.env()
 knitr::knit_hooks$set(ink = function(before, options, envir) {
   if (before) {
-    par(bg = NA, fg = "#7C7799", col = "#7C7799", col.axis = "#7C7799",
-        col.lab = "#7C7799", col.main = "#7C7799", font.main = 1,
-        mar = c(4, 4, 2, 1))
+    extra <- if (is.list(options$ink)) options$ink else list()
+    ink_saved$par <- par(utils::modifyList(ink_par, extra))
+  } else {
+    par(ink_saved$par)
   }
+  invisible(NULL)
 })
 knitr::opts_chunk$set(ink = TRUE)
 inline_svg <- function(file) {
@@ -108,9 +116,9 @@ Here is where each method stands after six passes:
 ```{r}
 #| fig-width: 8
 #| fig-height: 4.2
+#| ink: !expr list(mfrow = c(1, 2), mar = c(0.5, 0.5, 2.5, 0.5))
 #| fig-alt: "Two panels of the same 25 grey blobs on a five by five grid, each with its 25 centers marked. Left, kmeans() after six passes: several blobs share two centers while others have none. Right, emeans() after six passes: every blob but two has a center of its own; one center sits between two blobs in the top row and one blob in the second row has two. Each panel's title gives its error."
 fits <- list("kmeans()" = lloyd(6), "emeans()" = em6)
-par(mfrow = c(1, 2), mar = c(0.5, 0.5, 2.5, 0.5))
 for (name in names(fits)) {
   plot(y, pch = 16, cex = 0.3, col = adjustcolor("#7C7799", alpha.f = 0.15),
        asp = 1, axes = FALSE, xlab = "", ylab = "",

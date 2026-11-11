@@ -37,3 +37,14 @@ Methods for the \code{\link[generics:tidy]{generics::tidy()}}, \code{\link[gener
 \code{\link[generics:augment]{generics::augment()}} generics, which return plain data frames and need
 only the \pkg{generics} package to be installed.
 }
+\examples{
+if (requireNamespace("generics", quietly = TRUE)) {
+  set.seed(1)
+  x <- data.frame(a = c(rnorm(100), rnorm(100, mean = 4)),
+                  b = c(rnorm(100), rnorm(100, mean = 4)))
+  fit <- emeans(x, 2, threads = 1)
+  generics::tidy(fit)
+  generics::glance(fit)
+  head(generics::augment(fit, data = x))
+}
+}

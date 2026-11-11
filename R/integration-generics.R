@@ -18,6 +18,16 @@
 #'   for a fit made with `keep_cluster = FALSE`, which also has no `withinss`
 #'   column in `tidy()`. `augment()` returns the data with a
 #'   `.cluster` factor column.
+#' @examples
+#' if (requireNamespace("generics", quietly = TRUE)) {
+#'   set.seed(1)
+#'   x <- data.frame(a = c(rnorm(100), rnorm(100, mean = 4)),
+#'                   b = c(rnorm(100), rnorm(100, mean = 4)))
+#'   fit <- emeans(x, 2, threads = 1)
+#'   generics::tidy(fit)
+#'   generics::glance(fit)
+#'   head(generics::augment(fit, data = x))
+#' }
 #' @name emeans-broom
 NULL
 

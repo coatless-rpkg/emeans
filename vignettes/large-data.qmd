@@ -11,12 +11,20 @@ vignette: >
 #| include: false
 knitr::opts_chunk$set(comment = "#>", dev.args = list(bg = "transparent"))
 # Plots: transparent, with a mid-tone ink that reads on light and dark pages.
+# A chunk can add graphical parameters of its own through the `ink` option;
+# the hook restores the previous settings once the chunk is done.
+ink_par <- list(bg = NA, fg = "#7C7799", col = "#7C7799", col.axis = "#7C7799",
+                col.lab = "#7C7799", col.main = "#7C7799", font.main = 1,
+                mar = c(4, 4, 2, 1))
+ink_saved <- new.env()
 knitr::knit_hooks$set(ink = function(before, options, envir) {
   if (before) {
-    par(bg = NA, fg = "#7C7799", col = "#7C7799", col.axis = "#7C7799",
-        col.lab = "#7C7799", col.main = "#7C7799", font.main = 1,
-        mar = c(4, 4, 2, 1))
+    extra <- if (is.list(options$ink)) options$ink else list()
+    ink_saved$par <- par(utils::modifyList(ink_par, extra))
+  } else {
+    par(ink_saved$par)
   }
+  invisible(NULL)
 })
 knitr::opts_chunk$set(ink = TRUE)
 inline_svg <- function(file) {

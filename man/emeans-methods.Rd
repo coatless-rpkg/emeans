@@ -52,3 +52,20 @@ returns an object of class \code{"summary.emeans"}.
 \description{
 Methods for e-means fits
 }
+\examples{
+set.seed(1)
+x <- rbind(matrix(rnorm(200, sd = 0.3), ncol = 2),
+           matrix(rnorm(200, mean = 3, sd = 0.3), ncol = 2))
+fit <- emeans(x, 2, threads = 1)
+fit
+summary(fit)
+
+# Label new points, or score them by their nearest center
+newx <- rbind(c(0, 0), c(3, 3))
+predict(fit, newx)
+predict(fit, newx, type = "distance")
+
+# Each training row's center, or its cluster
+head(fitted(fit))
+head(fitted(fit, method = "classes"))
+}
